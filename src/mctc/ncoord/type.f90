@@ -204,16 +204,18 @@ contains
 
       integer :: iat, jat, izp, jzp, itr
       real(wp) :: r2, r1, rij(3), countf, countd(3), sigma(3, 3), cutoff2, den
+      real(wp), allocatable :: dtmpdr(:, :, :), dtmpdL(:, :, :)
 
       cn(:) = 0.0_wp
       dcndr(:, :, :) = 0.0_wp
       dcndL(:, :, :) = 0.0_wp
       cutoff2 = self%cutoff**2
 
-      !$omp parallel do schedule(runtime) default(none) &
-      !$omp reduction(+:cn, dcndr, dcndL) shared(mol, trans, cutoff2) &
-      !$omp shared(self) &
+      !$omp parallel do default(none) reduction(+:cn) &
+      !$omp shared(self, mol, trans, cutoff2, dcndr, dcndL) &
       !$omp private(jat, itr, izp, jzp, r2, rij, r1, den, countf, countd, sigma)
+      allocate(dtmpdr(3, mol%nat, mol%nat), dtmpdL(3, 3, mol%nat))
+      !$omp schedule(runtime) 
       do iat = 1, mol%nat
          izp = mol%id(iat)
          do jat = 1, iat
@@ -234,21 +236,27 @@ contains
                   cn(jat) = cn(jat) + countf * self%directed_factor
                end if
 
-               dcndr(:, iat, iat) = dcndr(:, iat, iat) + countd
-               dcndr(:, jat, jat) = dcndr(:, jat, jat) - countd * self%directed_factor
-               dcndr(:, iat, jat) = dcndr(:, iat, jat) + countd * self%directed_factor
-               dcndr(:, jat, iat) = dcndr(:, jat, iat) - countd
+               dtmpdr(:, iat, iat) = dtmpdr(:, iat, iat) + countd
+               dtmpdr(:, jat, jat) = dtmpdr(:, jat, jat) - countd * self%directed_factor
+               dtmpdr(:, iat, jat) = dtmpdr(:, iat, jat) + countd * self%directed_factor
+               dtmpdr(:, jat, iat) = dtmpdr(:, jat, iat) - countd
 
                sigma = spread(countd, 1, 3) * spread(rij, 2, 3)
 
-               dcndL(:, :, iat) = dcndL(:, :, iat) + sigma
+               dtmpdL(:, :, iat) = dtmpdL(:, :, iat) + sigma
                if (iat /= jat) then
-                  dcndL(:, :, jat) = dcndL(:, :, jat) + sigma * self%directed_factor
+                  dtmpdL(:, :, jat) = dtmpdL(:, :, jat) + sigma * self%directed_factor
                end if
 
             end do
          end do
       end do
+      !$omp critical (ncoord_d)
+      dcndr(:, :, :) = dcndr(:, :, :) + dtmpdr(:, :, :)
+      dcndL(:, :, :) = dcndL(:, :, :) + dtmpdL(:, :, :)
+      !$omp end critical (ncoord_d)
+      deallocate(dtmpdL, dtmpdr)
+      !$omp end parallel
 
    end subroutine ncoord_d
 
