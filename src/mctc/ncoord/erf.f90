@@ -47,7 +47,7 @@ module mctc_ncoord_erf
 contains
 
 
-   subroutine new_erf_ncoord(self, mol, kcn, cutoff, rcov, cut, norm_exp)
+   subroutine new_erf_ncoord(self, mol, kcn, cutoff, rcov, cut, norm_exp, rscale_pair)
       !> Coordination number container
       type(erf_ncoord_type), intent(out) :: self
       !> Molecular structure data
@@ -62,6 +62,8 @@ contains
       real(wp), intent(in), optional :: cut
       !> Exponent of the distance normalization
       real(wp), intent(in), optional :: norm_exp
+      !> Optional pairwise scaling of the covalent radii
+      real(wp), intent(in), optional :: rscale_pair(:, :)
 
       if(present(kcn)) then
          self%kcn = kcn
@@ -80,6 +82,13 @@ contains
          self%rcov(:) = rcov
       else
          self%rcov(:) = get_covalent_rad(mol%num)
+      end if
+
+      allocate(self%rscale_pair(mol%nid, mol%nid))
+      if (present(rscale_pair)) then
+         self%rscale_pair(:, :) = rscale_pair
+      else
+         self%rscale_pair(:, :) = 1.0_wp
       end if
 
       self%directed_factor = 1.0_wp
@@ -112,8 +121,8 @@ contains
       real(wp), intent(in) :: r
 
       real(wp) :: rc, count
-
-      rc = (self%rcov(izp) + self%rcov(jzp))
+      
+      rc = self%rscale_pair(izp, jzp) * (self%rcov(izp) + self%rcov(jzp))
 
       count = 0.5_wp * (1.0_wp + erf(-self%kcn*(r-rc)/rc**self%norm_exp))
 
@@ -133,7 +142,7 @@ contains
       real(wp), parameter :: sqrtpi = sqrt(pi)
       real(wp) :: rc, exponent, expterm, count
 
-      rc = self%rcov(izp) + self%rcov(jzp)
+      rc = self%rscale_pair(izp, jzp) * (self%rcov(izp) + self%rcov(jzp))
 
       exponent = self%kcn*(r-rc)/rc**self%norm_exp
       expterm = exp(-exponent**2.0_wp)

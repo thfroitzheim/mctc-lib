@@ -42,7 +42,7 @@ module mctc_ncoord_exp
 contains
 
 
-   subroutine new_exp_ncoord(self, mol, kcn, cutoff, rcov, cut)
+   subroutine new_exp_ncoord(self, mol, kcn, cutoff, rcov, cut, rscale_pair)
       !> Coordination number container
       type(exp_ncoord_type), intent(out) :: self
       !> Molecular structure data
@@ -55,7 +55,9 @@ contains
       real(wp), intent(in), optional :: rcov(:)
       !> Cutoff for the maximum coordination number
       real(wp), intent(in), optional :: cut
-
+      !> Optional pairwise scaling of the covalent radii
+      real(wp), intent(in), optional :: rscale_pair(:, :)
+   
       if(present(kcn)) then
          self%kcn = kcn
       else
@@ -73,6 +75,13 @@ contains
          self%rcov(:) = rcov
       else
          self%rcov(:) = get_covalent_rad(mol%num)
+      end if
+
+      allocate(self%rscale_pair(mol%nid, mol%nid))
+      if (present(rscale_pair)) then
+         self%rscale_pair(:, :) = rscale_pair
+      else
+         self%rscale_pair(:, :) = 1.0_wp
       end if
 
       self%directed_factor = 1.0_wp
@@ -100,7 +109,7 @@ contains
 
       real(wp) :: rc, count
 
-      rc = self%rcov(izp) + self%rcov(jzp)
+      rc = self%rscale_pair(izp, jzp) * (self%rcov(izp) + self%rcov(jzp))
 
       count =1.0_wp/(1.0_wp+exp(-self%kcn*(rc/r-1.0_wp)))
 
@@ -119,7 +128,7 @@ contains
 
       real(wp) :: rc, expterm, count
 
-      rc = self%rcov(izp) + self%rcov(jzp)
+      rc = self%rscale_pair(izp, jzp) * (self%rcov(izp) + self%rcov(jzp))
 
       expterm = exp(-self%kcn*(rc/r-1.0_wp))
       count = (-self%kcn*rc*expterm)/(r**2.0_wp*((expterm+1.0_wp)**2.0_wp))

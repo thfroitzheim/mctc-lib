@@ -93,7 +93,8 @@ module mctc_ncoord
 contains
 
 !> Create a new generic coordination number container
-subroutine new_ncoord(self, mol, cn_count_type, error, kcn, cutoff, rcov, en, cut, norm_exp)
+subroutine new_ncoord(self, mol, cn_count_type, error, kcn, cutoff, rcov, en, &
+   & cut, norm_exp, rscale_pair)
    !> Instance of the coordination number container
    class(ncoord_type), allocatable, intent(out) :: self
    !> Molecular structure data
@@ -114,6 +115,8 @@ subroutine new_ncoord(self, mol, cn_count_type, error, kcn, cutoff, rcov, en, cu
    real(wp), intent(in), optional :: cut
    !> Optional exponent of the distance normalization
    real(wp), intent(in), optional :: norm_exp
+   !> Optional pairwise scaling of the covalent radii
+   real(wp), intent(in), optional :: rscale_pair(:, :)
 
    select case(cn_count_type)
    case default
@@ -123,38 +126,40 @@ subroutine new_ncoord(self, mol, cn_count_type, error, kcn, cutoff, rcov, en, cu
       block
          type(exp_ncoord_type), allocatable :: tmp
          allocate(tmp)
-         call new_exp_ncoord(tmp, mol, kcn=kcn, cutoff=cutoff, rcov=rcov, cut=cut)
+         call new_exp_ncoord(tmp, mol, kcn=kcn, cutoff=cutoff, rcov=rcov, &
+            & cut=cut, rscale_pair=rscale_pair)
          call move_alloc(tmp, self)
       end block
    case(cn_count%dexp)
       block
          type(dexp_ncoord_type), allocatable :: tmp
          allocate(tmp)
-         call new_dexp_ncoord(tmp, mol, cutoff=cutoff, rcov=rcov, cut=cut)
+         call new_dexp_ncoord(tmp, mol, cutoff=cutoff, rcov=rcov, &
+            & cut=cut, rscale_pair=rscale_pair)
          call move_alloc(tmp, self)
       end block
    case(cn_count%erf)
       block
          type(erf_ncoord_type), allocatable :: tmp
          allocate(tmp)
-         call new_erf_ncoord(tmp, mol, kcn=kcn, cutoff=cutoff, &
-            & rcov=rcov, cut=cut, norm_exp=norm_exp)
+         call new_erf_ncoord(tmp, mol, kcn=kcn, cutoff=cutoff, rcov=rcov, &
+            & cut=cut, norm_exp=norm_exp, rscale_pair=rscale_pair)
          call move_alloc(tmp, self)
       end block
    case(cn_count%erf_en)
       block
          type(erf_en_ncoord_type), allocatable :: tmp
          allocate(tmp)
-         call new_erf_en_ncoord(tmp, mol, kcn=kcn, cutoff=cutoff, &
-            & rcov=rcov, en=en, cut=cut, norm_exp=norm_exp)
+         call new_erf_en_ncoord(tmp, mol, kcn=kcn, cutoff=cutoff, rcov=rcov, &
+            & en=en, cut=cut, norm_exp=norm_exp, rscale_pair=rscale_pair)
          call move_alloc(tmp, self)
       end block
    case(cn_count%dftd4)
       block
          type(erf_dftd4_ncoord_type), allocatable :: tmp
          allocate(tmp)
-         call new_erf_dftd4_ncoord(tmp, mol, kcn=kcn, cutoff=cutoff, &
-            & rcov=rcov, en=en, cut=cut, norm_exp=norm_exp)
+         call new_erf_dftd4_ncoord(tmp, mol, kcn=kcn, cutoff=cutoff, rcov=rcov, &
+            & en=en, cut=cut, norm_exp=norm_exp, rscale_pair=rscale_pair)
          call move_alloc(tmp, self)
       end block
    end select

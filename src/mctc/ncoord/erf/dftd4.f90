@@ -50,7 +50,7 @@ module mctc_ncoord_erf_dftd4
 contains
 
 
-   subroutine new_erf_dftd4_ncoord(self, mol, kcn, cutoff, rcov, en, cut, norm_exp)
+   subroutine new_erf_dftd4_ncoord(self, mol, kcn, cutoff, rcov, en, cut, norm_exp, rscale_pair)
       !> Coordination number container
       type(erf_dftd4_ncoord_type), intent(out) :: self
       !> Molecular structure data
@@ -67,6 +67,8 @@ contains
       real(wp), intent(in), optional :: cut
       !> Exponent of the distance normalization
       real(wp), intent(in), optional :: norm_exp
+      !> Optional pairwise scaling of the covalent radii
+      real(wp), intent(in), optional :: rscale_pair(:, :)
 
       if(present(kcn)) then
          self%kcn = kcn
@@ -85,6 +87,13 @@ contains
          self%rcov(:) = rcov
       else
          self%rcov(:) = get_covalent_rad(mol%num)
+      end if
+
+      allocate(self%rscale_pair(mol%nid, mol%nid))
+      if (present(rscale_pair)) then
+         self%rscale_pair(:, :) = rscale_pair
+      else
+         self%rscale_pair(:, :) = 1.0_wp
       end if
 
       allocate(self%en(mol%nid))

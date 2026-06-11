@@ -48,7 +48,7 @@ module mctc_ncoord_dexp
 contains
 
 
-subroutine new_dexp_ncoord(self, mol, cutoff, rcov, cut)
+subroutine new_dexp_ncoord(self, mol, cutoff, rcov, cut, rscale_pair)
    !> Coordination number container
    type(dexp_ncoord_type), intent(out) :: self
    !> Molecular structure data
@@ -59,6 +59,8 @@ subroutine new_dexp_ncoord(self, mol, cutoff, rcov, cut)
    real(wp), intent(in), optional :: rcov(:)
    !> Cutoff for the maximum coordination number
    real(wp), intent(in), optional :: cut
+   !> Optional pairwise scaling of the covalent radii
+   real(wp), intent(in), optional :: rscale_pair(:, :)
 
    if (present(cutoff)) then
       self%cutoff = cutoff
@@ -71,6 +73,13 @@ subroutine new_dexp_ncoord(self, mol, cutoff, rcov, cut)
       self%rcov(:) = rcov
    else
       self%rcov(:) = get_covalent_rad(mol%num)
+   end if
+   
+   allocate(self%rscale_pair(mol%nid, mol%nid))
+   if (present(rscale_pair)) then
+      self%rscale_pair(:, :) = rscale_pair
+   else
+      self%rscale_pair(:, :) = 1.0_wp
    end if
 
    self%directed_factor = 1.0_wp
@@ -98,7 +107,7 @@ elemental function ncoord_count(self, izp, jzp, r) result(count)
 
    real(wp) :: rc, count
 
-   rc = self%rcov(izp) + self%rcov(jzp)
+   rc = self%rscale_pair(izp, jzp) * (self%rcov(izp) + self%rcov(jzp))
 
    count = exp_count(ka, r, rc) * exp_count(kb, r, rc + r_shift)
 
@@ -116,8 +125,8 @@ elemental function ncoord_dcount(self, izp, jzp, r) result(count)
    real(wp), intent(in) :: r
 
    real(wp) :: rc, count
-
-   rc = self%rcov(izp) + self%rcov(jzp)
+   
+   rc = self%rscale_pair(izp, jzp) * (self%rcov(izp) + self%rcov(jzp))
 
    count = (exp_dcount(ka, r, rc) * exp_count(kb, r, rc + r_shift) &
                & + exp_count(ka, r, rc) * exp_dcount(kb, r, rc + r_shift))

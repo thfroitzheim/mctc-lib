@@ -61,6 +61,7 @@ contains
       & new_unittest("cn-mb01_exp-defaults", test_cn_mb01_exp_defaults), &
       & new_unittest("cn-mb02_exp", test_cn_mb02_exp), &
       & new_unittest("cn-mb03_exp", test_cn_mb03_exp), &
+      & new_unittest("cn-mb04_exp-rscale-pair", test_cn_mb04_exp_rscale_pair), &
       & new_unittest("cn-acetic_exp", test_cn_acetic_exp), &
       & new_unittest("dcndr-mb04_exp", test_dcndr_mb04_exp), &
       & new_unittest("dcndr-mb05_exp", test_dcndr_mb05_exp), &
@@ -72,6 +73,7 @@ contains
       & new_unittest("cn-mb01_erf-defaults", test_cn_mb01_erf_defaults), &
       & new_unittest("cn-mb02_erf", test_cn_mb02_erf), &
       & new_unittest("cn-mb03_erf", test_cn_mb03_erf), &
+      & new_unittest("cn-mb04_erf-rscale-pair", test_cn_mb04_erf_rscale_pair), &
       & new_unittest("cn-acetic_erf", test_cn_acetic_erf), &
       & new_unittest("dcndr-mb04_erf", test_dcndr_mb04_erf), &
       & new_unittest("dcndr-mb05_erf", test_dcndr_mb05_erf), &
@@ -83,6 +85,7 @@ contains
       & new_unittest("cn-mb01_erf_en-defaults", test_cn_mb01_erf_en_defaults), &
       & new_unittest("cn-mb02_erf_en", test_cn_mb02_erf_en), &
       & new_unittest("cn-mb03_erf_en", test_cn_mb03_erf_en), &
+      & new_unittest("cn-mb04_erf_en-rscale-pair", test_cn_mb04_erf_en_rscale_pair), &
       & new_unittest("cn-acetic_erf_en", test_cn_acetic_erf_en), &
       & new_unittest("dcndr-mb04_erf_en", test_dcndr_mb04_erf_en), &
       & new_unittest("dcndr-mb05_erf_en", test_dcndr_mb05_erf_en), &
@@ -96,6 +99,7 @@ contains
       & new_unittest("cn-mb02_erf_dftd4", test_cn_mb02_erf_dftd4), &
       & new_unittest("dfdcn-mb02_erf_dftd4", test_dfdcn_mb02_erf_dftd4), &
       & new_unittest("cn-mb03_erf_dftd4", test_cn_mb03_erf_dftd4), &
+      & new_unittest("cn-mb04_erf_dftd4-rscale-pair", test_cn_mb04_erf_dftd4_rscale_pair), &
       & new_unittest("cn-acetic_erf_dftd4", test_cn_acetic_erf_dftd4), &
       & new_unittest("dcndr-mb04_erf_dftd4", test_dcndr_mb04_erf_dftd4), &
       & new_unittest("dcndr-mb05_erf_dftd4", test_dcndr_mb05_erf_dftd4), &
@@ -670,6 +674,54 @@ contains
    end subroutine test_cn_mb03_exp
 
 
+   subroutine test_cn_mb04_exp_rscale_pair(error)
+
+      !> Error handling
+      type(error_type), allocatable, intent(out) :: error
+
+      type(structure_type) :: mol
+      type(exp_ncoord_type) :: exp_ncoord
+      real(wp), allocatable :: rcov(:)
+
+      real(wp), parameter :: cutoff = 30.0_wp
+      real(wp), parameter :: ref(16) = [&
+      & 1.58907796635476E+0_wp, 4.75209396783369E+0_wp, 9.77725509334265E-1_wp, &
+      & 1.02162242097307E+0_wp, 3.09967278714696E+0_wp, 1.55988741748865E+0_wp, &
+      & 1.00496226620795E+0_wp, 3.63313391743426E+0_wp, 9.77426790044488E-1_wp, &
+      & 9.73679536674805E-1_wp, 3.96780826113435E+0_wp, 5.94157253096179E+0_wp, &
+      & 4.65337974513872E+0_wp, 2.01338762991326E+0_wp, 1.00448717370390E+0_wp, &
+      & 3.67118873221902E+0_wp]
+
+      real(wp), parameter :: rscale_pair(7, 7) = reshape([&
+      & 1.00000000000000E+00_wp, 1.00032555316041E+00_wp, 1.00382691062037E+00_wp, &
+      & 1.01286267180735E+00_wp, 1.00092510249094E+00_wp, 1.00382101242052E+00_wp, &
+      & 1.01286267180735E+00_wp, 1.00032555316041E+00_wp, 1.00000000000000E+00_wp, &
+      & 1.00638482830933E+00_wp, 1.01728089327010E+00_wp, 1.00234823487789E+00_wp, &
+      & 1.00637720913782E+00_wp, 1.01728089327010E+00_wp, 1.00382691062037E+00_wp, &
+      & 1.00638482830933E+00_wp, 1.00000000000000E+00_wp, 1.00265757681970E+00_wp, &
+      & 1.00098888433461E+00_wp, 1.00000000227439E+00_wp, 1.00265757681970E+00_wp, &
+      & 1.01286267180735E+00_wp, 1.01728089327010E+00_wp, 1.00265757681970E+00_wp, &
+      & 1.00000000000000E+00_wp, 1.00688870487434E+00_wp, 1.00000002228722E+00_wp, &
+      & 1.00267792488876E+00_wp, 1.00092510249094E+00_wp, 1.00234823487789E+00_wp, &
+      & 1.00098888433461E+00_wp, 1.00688870487434E+00_wp, 1.00000000000000E+00_wp, &
+      & 1.00098588720126E+00_wp, 1.00688870487434E+00_wp, 1.00382101242052E+00_wp, &
+      & 1.00637720913782E+00_wp, 1.00000000227439E+00_wp, 1.00000002228722E+00_wp, &
+      & 1.00098588720126E+00_wp, 1.00000000000000E+00_wp, 1.00266249615596E+00_wp, &
+      & 1.01286267180735E+00_wp, 1.01728089327010E+00_wp, 1.00265757681970E+00_wp, &
+      & 1.00267792488876E+00_wp, 1.00688870487434E+00_wp, 1.00266249615596E+00_wp, &
+      & 1.00000000000000E+00_wp], shape(rscale_pair))
+
+      call get_structure(mol, "mindless04")
+
+      allocate(rcov(mol%nid))
+      rcov(:) = get_covalent_rad(mol%num)
+
+      call new_exp_ncoord(exp_ncoord, mol, cutoff=cutoff, rcov=rcov, rscale_pair=rscale_pair)
+      call test_cn_gen(error, mol, exp_ncoord, ref)
+
+   end subroutine test_cn_mb04_exp_rscale_pair
+
+
    subroutine test_cn_acetic_exp(error)
 
       !> Error handling
@@ -973,6 +1025,54 @@ contains
       call test_cn_gen(error, mol, erf_ncoord, ref)
 
    end subroutine test_cn_mb03_erf
+
+
+   subroutine test_cn_mb04_erf_rscale_pair(error)
+
+      !> Error handling
+      type(error_type), allocatable, intent(out) :: error
+
+      type(structure_type) :: mol
+      type(erf_ncoord_type) :: erf_ncoord
+      real(wp), allocatable :: rcov(:)
+
+      real(wp), parameter :: cutoff = 30.0_wp
+      real(wp), parameter :: ref(16) = [&
+      & 1.30722620824749E+0_wp, 3.81475686244945E+0_wp, 8.00189982858197E-1_wp, &
+      & 9.77128563192906E-1_wp, 2.86488208070529E+0_wp, 1.30205212990441E+0_wp, &
+      & 8.85929283611835E-1_wp, 2.92314252917017E+0_wp, 7.98888408225853E-1_wp, &
+      & 7.89675577042782E-1_wp, 3.48447512976745E+0_wp, 5.19399263313710E+0_wp, &
+      & 3.84952192945302E+0_wp, 1.83884372595245E+0_wp, 8.85606334297660E-1_wp, &
+      & 3.09046861178082E+0_wp]
+
+      real(wp), parameter :: rscale_pair(7, 7) = reshape([&
+      & 1.00000000000000E+00_wp, 1.00032555316041E+00_wp, 1.00382691062037E+00_wp, &
+      & 1.01286267180735E+00_wp, 1.00092510249094E+00_wp, 1.00382101242052E+00_wp, &
+      & 1.01286267180735E+00_wp, 1.00032555316041E+00_wp, 1.00000000000000E+00_wp, &
+      & 1.00638482830933E+00_wp, 1.01728089327010E+00_wp, 1.00234823487789E+00_wp, &
+      & 1.00637720913782E+00_wp, 1.01728089327010E+00_wp, 1.00382691062037E+00_wp, &
+      & 1.00638482830933E+00_wp, 1.00000000000000E+00_wp, 1.00265757681970E+00_wp, &
+      & 1.00098888433461E+00_wp, 1.00000000227439E+00_wp, 1.00265757681970E+00_wp, &
+      & 1.01286267180735E+00_wp, 1.01728089327010E+00_wp, 1.00265757681970E+00_wp, &
+      & 1.00000000000000E+00_wp, 1.00688870487434E+00_wp, 1.00000002228722E+00_wp, &
+      & 1.00267792488876E+00_wp, 1.00092510249094E+00_wp, 1.00234823487789E+00_wp, &
+      & 1.00098888433461E+00_wp, 1.00688870487434E+00_wp, 1.00000000000000E+00_wp, &
+      & 1.00098588720126E+00_wp, 1.00688870487434E+00_wp, 1.00382101242052E+00_wp, &
+      & 1.00637720913782E+00_wp, 1.00000000227439E+00_wp, 1.00000002228722E+00_wp, &
+      & 1.00098588720126E+00_wp, 1.00000000000000E+00_wp, 1.00266249615596E+00_wp, &
+      & 1.01286267180735E+00_wp, 1.01728089327010E+00_wp, 1.00265757681970E+00_wp, &
+      & 1.00267792488876E+00_wp, 1.00688870487434E+00_wp, 1.00266249615596E+00_wp, &
+      & 1.00000000000000E+00_wp], shape(rscale_pair))
+
+      call get_structure(mol, "mindless04")
+
+      allocate(rcov(mol%nid))
+      rcov(:) = get_covalent_rad(mol%num)
+
+      call new_erf_ncoord(erf_ncoord, mol, cutoff=cutoff, rcov=rcov, rscale_pair=rscale_pair)
+      call test_cn_gen(error, mol, erf_ncoord, ref)
+
+   end subroutine test_cn_mb04_erf_rscale_pair
 
 
    subroutine test_cn_acetic_erf(error)
@@ -1290,6 +1390,55 @@ contains
       call test_cn_gen(error, mol, erf_en_ncoord, ref)
 
    end subroutine test_cn_mb03_erf_en
+
+
+   subroutine test_cn_mb04_erf_en_rscale_pair(error)
+
+      !> Error handling
+      type(error_type), allocatable, intent(out) :: error
+
+      type(structure_type) :: mol
+      type(erf_en_ncoord_type) :: erf_en_ncoord
+      real(wp), allocatable :: rcov(:)
+
+      real(wp), parameter :: cutoff = 30.0_wp
+      real(wp), parameter :: ref(16) = [&
+      &-4.51737715364766E-1_wp,-8.74966556692512E-2_wp,-2.28280387480605E-1_wp, &
+      &-1.84844442436801E+0_wp, 2.86074271833141E+0_wp,-4.45406662392448E-1_wp, &
+      & 2.66395141164853E-1_wp, 4.09854040164412E-1_wp,-1.29559350863908E-1_wp, &
+      &-1.08176849827725E-1_wp,-1.63790422090022E+0_wp, 3.54063681546030E+0_wp, &
+      & 3.46559358838389E-1_wp,-2.72263317094629E+0_wp, 2.66361118630568E-1_wp, &
+      &-3.09097547767208E-2_wp]
+
+      real(wp), parameter :: rscale_pair(7, 7) = reshape([&
+      & 1.00000000000000E+00_wp, 1.00032555316041E+00_wp, 1.00382691062037E+00_wp, &
+      & 1.01286267180735E+00_wp, 1.00092510249094E+00_wp, 1.00382101242052E+00_wp, &
+      & 1.01286267180735E+00_wp, 1.00032555316041E+00_wp, 1.00000000000000E+00_wp, &
+      & 1.00638482830933E+00_wp, 1.01728089327010E+00_wp, 1.00234823487789E+00_wp, &
+      & 1.00637720913782E+00_wp, 1.01728089327010E+00_wp, 1.00382691062037E+00_wp, &
+      & 1.00638482830933E+00_wp, 1.00000000000000E+00_wp, 1.00265757681970E+00_wp, &
+      & 1.00098888433461E+00_wp, 1.00000000227439E+00_wp, 1.00265757681970E+00_wp, &
+      & 1.01286267180735E+00_wp, 1.01728089327010E+00_wp, 1.00265757681970E+00_wp, &
+      & 1.00000000000000E+00_wp, 1.00688870487434E+00_wp, 1.00000002228722E+00_wp, &
+      & 1.00267792488876E+00_wp, 1.00092510249094E+00_wp, 1.00234823487789E+00_wp, &
+      & 1.00098888433461E+00_wp, 1.00688870487434E+00_wp, 1.00000000000000E+00_wp, &
+      & 1.00098588720126E+00_wp, 1.00688870487434E+00_wp, 1.00382101242052E+00_wp, &
+      & 1.00637720913782E+00_wp, 1.00000000227439E+00_wp, 1.00000002228722E+00_wp, &
+      & 1.00098588720126E+00_wp, 1.00000000000000E+00_wp, 1.00266249615596E+00_wp, &
+      & 1.01286267180735E+00_wp, 1.01728089327010E+00_wp, 1.00265757681970E+00_wp, &
+      & 1.00267792488876E+00_wp, 1.00688870487434E+00_wp, 1.00266249615596E+00_wp, &
+      & 1.00000000000000E+00_wp], shape(rscale_pair))
+
+      call get_structure(mol, "mindless04")
+
+      allocate(rcov(mol%nid))
+      rcov(:) = get_covalent_rad(mol%num)
+
+      call new_erf_en_ncoord(erf_en_ncoord, mol, cutoff=cutoff, rcov=rcov, &
+         & rscale_pair=rscale_pair)
+      call test_cn_gen(error, mol, erf_en_ncoord, ref)
+
+   end subroutine test_cn_mb04_erf_en_rscale_pair
 
 
    subroutine test_cn_acetic_erf_en(error)
@@ -1756,6 +1905,55 @@ contains
       call test_cn_gen(error, mol, erf_dftd4_ncoord, ref)
 
    end subroutine test_cn_mb03_erf_dftd4
+
+
+   subroutine test_cn_mb04_erf_dftd4_rscale_pair(error)
+
+      !> Error handling
+      type(error_type), allocatable, intent(out) :: error
+
+      type(structure_type) :: mol
+      type(erf_dftd4_ncoord_type) :: erf_dftd4_ncoord
+      real(wp), allocatable :: rcov(:)
+
+      real(wp), parameter :: cutoff = 30.0_wp
+      real(wp), parameter :: ref(16) = [&
+      & 1.47789318519397E+0_wp, 4.50823423008875E+0_wp, 9.16320462596794E-1_wp, &
+      & 7.21656645212966E-1_wp, 2.51100778746536E+0_wp, 1.45228680660067E+0_wp, &
+      & 9.24747477980850E-1_wp, 3.39689101313324E+0_wp, 9.31712856902803E-1_wp, &
+      & 9.30321520180743E-1_wp, 3.59563165118506E+0_wp, 5.21607682834532E+0_wp, &
+      & 4.41433105869392E+0_wp, 1.52244610607427E+0_wp, 9.24598279738046E-1_wp, &
+      & 3.43783758335005E+0_wp]
+
+      real(wp), parameter :: rscale_pair(7, 7) = reshape([&
+      & 1.00000000000000E+00_wp, 1.00032555316041E+00_wp, 1.00382691062037E+00_wp, &
+      & 1.01286267180735E+00_wp, 1.00092510249094E+00_wp, 1.00382101242052E+00_wp, &
+      & 1.01286267180735E+00_wp, 1.00032555316041E+00_wp, 1.00000000000000E+00_wp, &
+      & 1.00638482830933E+00_wp, 1.01728089327010E+00_wp, 1.00234823487789E+00_wp, &
+      & 1.00637720913782E+00_wp, 1.01728089327010E+00_wp, 1.00382691062037E+00_wp, &
+      & 1.00638482830933E+00_wp, 1.00000000000000E+00_wp, 1.00265757681970E+00_wp, &
+      & 1.00098888433461E+00_wp, 1.00000000227439E+00_wp, 1.00265757681970E+00_wp, &
+      & 1.01286267180735E+00_wp, 1.01728089327010E+00_wp, 1.00265757681970E+00_wp, &
+      & 1.00000000000000E+00_wp, 1.00688870487434E+00_wp, 1.00000002228722E+00_wp, &
+      & 1.00267792488876E+00_wp, 1.00092510249094E+00_wp, 1.00234823487789E+00_wp, &
+      & 1.00098888433461E+00_wp, 1.00688870487434E+00_wp, 1.00000000000000E+00_wp, &
+      & 1.00098588720126E+00_wp, 1.00688870487434E+00_wp, 1.00382101242052E+00_wp, &
+      & 1.00637720913782E+00_wp, 1.00000000227439E+00_wp, 1.00000002228722E+00_wp, &
+      & 1.00098588720126E+00_wp, 1.00000000000000E+00_wp, 1.00266249615596E+00_wp, &
+      & 1.01286267180735E+00_wp, 1.01728089327010E+00_wp, 1.00265757681970E+00_wp, &
+      & 1.00267792488876E+00_wp, 1.00688870487434E+00_wp, 1.00266249615596E+00_wp, &
+      & 1.00000000000000E+00_wp], shape(rscale_pair))
+
+      call get_structure(mol, "mindless04")
+
+      allocate(rcov(mol%nid))
+      rcov(:) = get_covalent_rad(mol%num)
+
+      call new_erf_dftd4_ncoord(erf_dftd4_ncoord, mol, cutoff=cutoff, rcov=rcov, &
+         & rscale_pair=rscale_pair)
+      call test_cn_gen(error, mol, erf_dftd4_ncoord, ref)
+
+   end subroutine test_cn_mb04_erf_dftd4_rscale_pair
 
 
    subroutine test_cn_acetic_erf_dftd4(error)
