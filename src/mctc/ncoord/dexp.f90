@@ -76,7 +76,7 @@ subroutine new_dexp_ncoord(self, mol, cutoff, rcov, cut, rscale_pair)
    else
       self%rcov(:) = get_covalent_rad(mol%num)
    end if
-   
+
    allocate(self%rscale_pair(mol%nid, mol%nid))
    if (present(rscale_pair)) then
       self%rscale_pair(:, :) = rscale_pair
@@ -127,7 +127,7 @@ elemental function ncoord_dcount(self, izp, jzp, r) result(count)
    real(wp), intent(in) :: r
 
    real(wp) :: rc, count
-   
+
    rc = self%rscale_pair(izp, jzp) * (self%rcov(izp) + self%rcov(jzp))
 
    count = (exp_dcount(ka, r, rc) * exp_count(kb, r, rc + r_shift) &
@@ -148,7 +148,7 @@ elemental function ncoord_d2count(self, izp, jzp, r) result(count)
 
    real(wp) :: rc, count
 
-   rc = self%rcov(izp) + self%rcov(jzp)
+   rc = self%rscale_pair(izp, jzp) * (self%rcov(izp) + self%rcov(jzp))
 
    count = exp_d2count(ka, r, rc)*exp_count(kb, r, rc + r_shift) &
       & + 2.0_wp*exp_dcount(ka, r, rc)*exp_dcount(kb, r, rc + r_shift) &

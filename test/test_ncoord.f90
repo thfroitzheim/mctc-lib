@@ -113,6 +113,8 @@ contains
       & new_unittest("hessian-mb04-cut", test_hessian_mb04_cut), &
       & new_unittest("hessian-ammonia-cut", test_hessian_ammonia_cut), &
       & new_unittest("hessian-feo2-cut", test_hessian_feo2_cut), &
+      & new_unittest("hessian-mb04-rscale-pair", test_hessian_mb04_rscale_pair), &
+      & new_unittest("hessian-feo2-rscale-pair", test_hessian_feo2_rscale_pair), &
       & new_unittest("dcndL-mb06_erf_dftd4", test_dcndL_mb06_erf_dftd4), &
       & new_unittest("dcndL-mb07_erf_dftd4", test_dcndL_mb07_erf_dftd4), &
       & new_unittest("dcndL-antracene_erf_dftd4", test_dcndL_anthracene_erf_dftd4), &
@@ -635,6 +637,65 @@ contains
          end do
       end do
    end subroutine test_hessian_cut_gen
+
+
+   subroutine test_hessian_mb04_rscale_pair(error)
+      type(error_type), allocatable, intent(out) :: error
+      type(structure_type) :: mol
+
+      call get_structure(mol, "mindless04")
+      call test_hessian_rscale_pair_gen(error, mol, 30.0_wp)
+   end subroutine test_hessian_mb04_rscale_pair
+
+
+   subroutine test_hessian_feo2_rscale_pair(error)
+      type(error_type), allocatable, intent(out) :: error
+      type(structure_type) :: mol
+
+      call get_structure(mol, "feo2")
+      call test_hessian_rscale_pair_gen(error, mol, 12.0_wp)
+   end subroutine test_hessian_feo2_rscale_pair
+
+
+   !> Check all derivatives and list evaluations with pairwise scaled radii
+   subroutine test_hessian_rscale_pair_gen(error, mol, cutoff)
+      type(error_type), allocatable, intent(out) :: error
+      type(structure_type), intent(inout) :: mol
+      real(wp), intent(in) :: cutoff
+
+      class(ncoord_type), allocatable :: ncoord
+      integer :: it, icut, isp, jsp
+      integer, parameter :: counts(*) = [cn_count%exp, cn_count%dexp, &
+         & cn_count%erf, cn_count%erf_en, cn_count%dftd4]
+      real(wp), parameter :: cuts(*) = [-1.0_wp, 2.5_wp]
+      real(wp), allocatable :: rscale_pair(:, :)
+
+      allocate(rscale_pair(mol%nid, mol%nid))
+      do isp = 1, mol%nid
+         do jsp = 1, mol%nid
+            rscale_pair(jsp, isp) = 0.9_wp + 0.05_wp*real(mod(isp + jsp, 5), wp)
+         end do
+      end do
+
+      do it = 1, size(counts)
+         do icut = 1, size(cuts)
+            call new_ncoord(ncoord, mol, counts(it), error, cutoff=cutoff, &
+               & cut=cuts(icut), rscale_pair=rscale_pair)
+            if (allocated(error)) return
+            call test_numgrad(error, mol, ncoord)
+            if (.not. allocated(error)) call test_numsigma(error, mol, ncoord)
+            if (.not. allocated(error)) call test_numhessian(error, mol, ncoord)
+            if (.not. allocated(error)) call test_cn_list_gen(error, mol, ncoord)
+            if (.not. allocated(error)) call test_dcndr_list_gen(error, mol, ncoord)
+            if (.not. allocated(error)) call test_derivs_list_gen(error, mol, ncoord)
+            if (.not. allocated(error)) call test_hessian_list_gen(error, mol, ncoord)
+            if (allocated(error)) then
+               error%message = get_cn_count_string(counts(it))//": "//error%message
+               return
+            end if
+         end do
+      end do
+   end subroutine test_hessian_rscale_pair_gen
 
 
    subroutine test_numsigma(error, mol, ncoord)

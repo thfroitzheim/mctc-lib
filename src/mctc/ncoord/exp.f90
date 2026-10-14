@@ -59,7 +59,7 @@ contains
       real(wp), intent(in), optional :: cut
       !> Optional pairwise scaling of the covalent radii
       real(wp), intent(in), optional :: rscale_pair(:, :)
-   
+
       if(present(kcn)) then
          self%kcn = kcn
       else
@@ -151,7 +151,7 @@ contains
 
       real(wp) :: rc, cf, tmp, count
 
-      rc = self%rcov(izp) + self%rcov(jzp)
+      rc = self%rscale_pair(izp, jzp) * (self%rcov(izp) + self%rcov(jzp))
       cf = 1.0_wp/(1.0_wp + exp(-self%kcn*(rc/r - 1.0_wp)))
       tmp = cf*(1.0_wp - cf)
 

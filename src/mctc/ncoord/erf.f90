@@ -123,7 +123,7 @@ contains
       real(wp), intent(in) :: r
 
       real(wp) :: rc, count
-      
+
       rc = self%rscale_pair(izp, jzp) * (self%rcov(izp) + self%rcov(jzp))
 
       count = 0.5_wp * (1.0_wp + erf(-self%kcn*(r-rc)/rc**self%norm_exp))
@@ -167,7 +167,7 @@ contains
       real(wp), parameter :: sqrtpi = sqrt(pi)
       real(wp) :: rc, exponent, expterm, count, rcn
 
-      rc = self%rcov(izp) + self%rcov(jzp)
+      rc = self%rscale_pair(izp, jzp) * (self%rcov(izp) + self%rcov(jzp))
       rcn = rc**self%norm_exp
 
       exponent = self%kcn*(r - rc)/rcn
